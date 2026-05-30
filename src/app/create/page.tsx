@@ -22,6 +22,12 @@ const HOST_NICK: Record<GameId, string> = {
   "tap-rush": "빠른손 방장",
   "whack-mole": "두더지 방장",
   "star-catch": "별잡이 방장",
+  flappy: "날쌘 방장",
+  dino: "점프 방장",
+  stack: "쌓기 방장",
+  snake: "꼬물 방장",
+  "2048": "숫자 방장",
+  suika: "수박 방장",
 };
 
 export default function CreatePage() {

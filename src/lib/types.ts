@@ -1,6 +1,15 @@
 // ===== 골든벨 공용 타입 =====
 
-export type GameId = "tap-rush" | "whack-mole" | "star-catch";
+export type GameId =
+  | "tap-rush"
+  | "whack-mole"
+  | "star-catch"
+  | "flappy"
+  | "dino"
+  | "stack"
+  | "snake"
+  | "2048"
+  | "suika";
 
 export type RoomType = "personal" | "commerce";
 
