@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GAMES } from "@/lib/games";
+import { GAMES, getGame } from "@/lib/games";
 import {
   PRIZE_PRESETS,
   PRICING,
@@ -13,9 +13,16 @@ import {
 import type { GameId, RoomType } from "@/lib/types";
 import { AppBar, Card } from "@/components/ui";
 import { PaySheet, type PayLine } from "@/components/PaySheet";
-import { createRoomApi, setNickname } from "@/lib/client";
+import { createRoomApi, getNickname, setNickname } from "@/lib/client";
 
 const QUICK_EMOJI = ["🎁", "💰", "🎮", "👟", "💄", "🍱", "🎟️", "📱"];
+
+// 게임별 자동 방장 닉네임
+const HOST_NICK: Record<GameId, string> = {
+  "tap-rush": "빠른손 방장",
+  "whack-mole": "두더지 방장",
+  "star-catch": "별잡이 방장",
+};
 
 export default function CreatePage() {
   const router = useRouter();
@@ -31,6 +38,8 @@ export default function CreatePage() {
 
   const [title, setTitle] = useState("");
   const [hostName, setHostName] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [hostTouched, setHostTouched] = useState(false);
 
   const [sponsor, setSponsor] = useState("");
   const [bannerText, setBannerText] = useState("");
@@ -57,11 +66,25 @@ export default function CreatePage() {
   const premium = type === "commerce" ? PRICING.premiumPrice : 0;
   const grandTotal = cost.total + premium;
 
+  // 상품·게임 기반 자동 방 제목 / 닉네임 (사용자가 입력하면 그 값 우선)
+  const game = getGame(gameId);
+  const autoTitle = `${prize.emoji} ${prize.name} 걸고 ${game.name} 한판!`;
+  const autoHost = HOST_NICK[gameId];
+  const effectiveTitle = titleTouched && title.trim() ? title.trim() : autoTitle;
+  const effectiveHost = hostTouched && hostName.trim() ? hostName.trim() : autoHost;
+
+  // 이전에 정한 닉네임이 있으면 미리 채워줌
+  useEffect(() => {
+    const saved = getNickname();
+    if (saved) {
+      setHostName(saved);
+      setHostTouched(true);
+    }
+  }, []);
+
   const valid =
     prize.value > 0 &&
     prize.name.length > 0 &&
-    title.trim().length > 0 &&
-    hostName.trim().length > 0 &&
     (type === "personal" || sponsor.trim().length > 0);
 
   const payLines: PayLine[] = [
@@ -78,11 +101,11 @@ export default function CreatePage() {
     setSubmitting(true);
     setError("");
     try {
-      setNickname(hostName.trim());
+      setNickname(effectiveHost);
       const { id, encoded } = await createRoomApi({
-        title: title.trim(),
+        title: effectiveTitle,
         gameId,
-        hostName: hostName.trim(),
+        hostName: effectiveHost,
         type,
         prize: {
           name: prize.name,
@@ -235,20 +258,26 @@ export default function CreatePage() {
         {/* 방 정보 */}
         <section className="space-y-3">
           <h3 className="text-sm font-bold text-kakao-sub">방 정보</h3>
-          <Field label="방 제목">
+          <Field label="방 제목 (자동 입력됨 · 수정 가능)">
             <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="추석 기념 피자 한판 쏜다! 🍕"
+              value={titleTouched ? title : autoTitle}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setTitleTouched(true);
+              }}
+              placeholder={autoTitle}
               maxLength={40}
               className="input"
             />
           </Field>
-          <Field label="내 닉네임 (호스트)">
+          <Field label="내 닉네임 (자동 입력됨 · 수정 가능)">
             <input
-              value={hostName}
-              onChange={(e) => setHostName(e.target.value)}
-              placeholder="골든벨러"
+              value={hostTouched ? hostName : autoHost}
+              onChange={(e) => {
+                setHostName(e.target.value);
+                setHostTouched(true);
+              }}
+              placeholder={autoHost}
               maxLength={16}
               className="input"
             />
