@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 골든벨 🔔 — 상품 걸고 친구랑 한판!
 
-## Getting Started
+> 내가 우승 상품을 걸고, 친구들을 챗방에 초대해, 하이퍼캐주얼 게임 점수로 1등을 가리는 **소셜 게임**.
+> 카카오톡 메신저 톤의 모바일 웹 데모입니다.
 
-First, run the development server:
+## 핵심 컨셉
+
+- **방 만들기** → 우승 상품을 결제(목 결제)하고 게임을 골라 방 생성
+- **챗방에 공유** → 카톡 링크로 친구·가족 초대 (공유 링크에 방 정보가 인코딩되어 어디서든 복원)
+- **점수 경쟁** → 게임 한판, 최고 점수가 리더보드 상단 → 상위 N명이 우승
+
+### 두 가지 유저 타입
+
+| | 일반 유저 | 커머스 유저 |
+|---|---|---|
+| 목적 | 친구·가족과 재미 경쟁 | 광고·바이럴 마케팅 |
+| 예시 | "추석 기념 피자 한판 쏜다!" | "치킨 100개 걸고 신제품 바이럴" |
+| 특징 | 사적 챗방 | 상단 광고 배너+링크, 참가 수 = 광고 노출(UV) |
+
+### 플레이 횟수 퍼널 (Free → Viral → Paid)
+
+1. 기본 **1회** 무료
+2. 링크 **공유 시 +1회** (최대 2회)
+3. **광고 터치 시 +1회** (offerwall, 최대 3회)
+4. 부족하면 **결제 충전** (1,000원 / 5회)
+
+### BM
+
+- 플레이 횟수 결제
+- 우승 상품 결제 수수료(8%)
+- 커머스 유저 프리미엄 구독(상단 배너 권한)
+
+## 게임 3종 (하이퍼캐주얼 · 단순 점수 경쟁)
+
+| 게임 | 규칙 |
+|---|---|
+| ⚡ 빠른 손 | 10초 동안 최대한 많이 탭 |
+| 🐹 두더지 잡기 | 30초, 두더지 +1 / 폭탄 −2 |
+| ⭐ 별 받기 | 떨어지는 별을 바구니로, 폭탄 3번이면 끝 |
+
+## 기술 스택
+
+- **Next.js 16** (App Router) · **React 19** · **TypeScript** · **Tailwind CSS v4**
+- 방/리더보드/플레이권: 서버 라우트 핸들러 + 인메모리 스토어
+  - 서버리스 콜드스타트로 방이 사라져도 **공유 링크(`?d=`)에 인코딩된 방 설정으로 자동 재수화**
+- 게임: HTML5 Canvas + `requestAnimationFrame`
+- 결제/카카오 선물하기: **목(mock) 결제 시트**로 플로우 시뮬레이션 (실제 청구 없음)
+
+## 개발
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+
+npm run build && npm start
+node scripts/smoke.mjs   # 엔드투엔드 API 스모크 테스트 (서버 실행 중일 때)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 디렉터리
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/
+    page.tsx                 홈
+    create/page.tsx          방 만들기
+    room/[id]/               방 로비 (리더보드/공유/광고/충전)
+    room/[id]/play/          게임 플레이 + 결과
+    api/rooms/...            방/점수/플레이권 API
+  components/
+    games/                   3종 게임 (TapRush, WhackMole, StarCatch)
+    ui.tsx, PaySheet.tsx     공용 UI
+  lib/                       types · store · roomCode · games · util · client
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> 데모/프로토타입입니다. 인메모리 스토어는 단일 인스턴스 warm 상태에서 공유되며,
+> 운영 시 Vercel KV/Redis 등으로 교체하도록 `src/lib/store.ts` 한 곳에 캡슐화되어 있습니다.
